@@ -1,78 +1,148 @@
 package org.karma.serialization;
 
-import java.io.IOException;
 import org.karma.serialization.QuickSerializer.RuntimeSerializer;
+
+import static java.lang.String.format;
 import static org.karma.serialization.QuickSerializer.getSerializer;
 
+@SuppressWarnings(value = "unchecked")
 public class SerDataOutputStream {
 	private final byte[] buffer;
 	private final int bufferMaxSize;
 	private int bufferPosition = 0;
 
+	/**
+		 @param bufferSize - max size of buffer. (in bytes)
+	 */
 	public SerDataOutputStream(int bufferSize) {
 		this.bufferMaxSize = bufferSize;
 		this.buffer = new byte[bufferSize];
 	}
+	/**
+	    Throws SerializerEndOfBufferException if there's not enough bytes
+	 */
 	private void checkBufferAvail(int bytesNeeded) {
-		if (bufferPosition + bytesNeeded < bufferMaxSize) {
+		var askedBytes = bufferPosition + bytesNeeded;
+		if (askedBytes < bufferMaxSize) {
 			return;
 		}
-		throw new RuntimeException();
+		throw new SerializerEndOfBufferException(format("Reached the end of buffer. Buffer size: %s, asked: %s", bufferMaxSize, askedBytes));
 	}
+	/**
+	    Returns a number with a special number of bytes
+	 */
 	private void writeNumber(int bytes, long number) {
-		checkBufferAvail(bytes);
+		checkBufferAvail(bytes); // Ensure that there's enough bytes
 		for (int i = 0; i < bytes; i++) {
 			buffer[bufferPosition++] = (byte) (0xff & (number >> (bytes - 1 - i) * 8));
 		}
 	}
+	/**
+	    Requires 1 byte
+	 */
 	public void writeByte(byte number) {
 		writeNumber(1, number);
 	}
+	/**
+	    Requires 2 bytes
+	 */
 	public void writeShort(short number) {
 		writeNumber(2, number);
 	}
+	/**
+	    Requires 4 bytes
+	 */
 	public void writeInt(int number) {
 		writeNumber(4, number);
 	}
+	/**
+		 Requires 8 bytes
+	 */
 	public void writeLong(long number) {
 		writeNumber(8, number);
 	}
+	/**
+	    Requires 4 bytes
+	 */
 	public void writeChar(char character) {
 		writeInt(character);
 	}
-	public void writeBoolean(boolean bool) throws IOException {
+	/**
+		 Requires 1 byte
+	 */
+	public void writeBoolean(boolean bool) {
 		writeByte((byte) (bool ? 1 : 0));
 	}
-	public void writeFloat(float number) throws IOException {
+	/**
+	    Requires 4 bytes
+	 */
+	public void writeFloat(float number) {
 		checkBufferAvail(4);
 		writeInt(Float.floatToIntBits(number));
 	}
-	public void writeDouble(double number) throws IOException {
+	/**
+		Requires 8 bytes
+	 */
+	public void writeDouble(double number) {
 		checkBufferAvail(8);
 		writeLong(Double.doubleToLongBits(number));
 	}
+	/**
+	    Requires at least 10 bytes
+	 */
+	public void writeString(String string) {
+		writeObject(string);
+	}
+	/**
+	    Requires 6 bytes
+
+	    Write a null instance of Class<T>
+	 */
+	public <T> void writeNull(Class<T> objectClass) {
+		var serializer = (RuntimeSerializer<T>) getSerializer(objectClass); // Get object serializer
+
+		writeShort(serializer.signature()); // Signature of the type
+		writeInt(-1); // Negative size means Null
+	}
+	/**
+	    Requires at least 6 bytes
+	 */
 	public <T> void writeObject(T object) {
 		var serializer = (RuntimeSerializer<T>) getSerializer(object.getClass());
 		assert serializer != null;
-		var subBuffer = new SerDataOutputStream(serializer.bytes());
-		serializer.serializerInstance().serialize(subBuffer, object);
-		var result = subBuffer.getFilledBuffer();
+
+		writeShort(serializer.signature()); // Signature of the type
+
+		var subBuffer = new SerDataOutputStream(serializer.bytes()); // Create sub-buffer with SerializerObject.bytes() size
+
+		try {
+			serializer.serializerInstance().serialize(subBuffer, object); // We don't use current buffer due to safety. So we create a new one
+		} catch (Throwable t) {
+			writeInt(-1); // A negative size means a null instance
+			throw new SerializerObjectWriteException(format("Failed to write object. Written null instead of %s", serializer.objectClass().getSimpleName()), t);
+		}
+
+		var result = subBuffer.getBytes(); // Get the used space of subBuffer
 		var resultLength = result.length;
 
-		writeShort(serializer.signature()); // Signature of type
 		writeInt(resultLength); // Size of object
 
-		for (byte b : result) writeByte(b);
+		for (int i = 0; i < resultLength; i++) {
+			writeByte(result[i]); // Rewrite byte from subBuffer to current
+		}
 	}
+	/**
+		 Reset buffer position
+	 */
 	private void reset() {
 		bufferPosition = 0;
 	}
-	public byte[] getFilledBuffer() {
+	/**
+		 Get the used space
+	 */
+	public byte[] getBytes() {
 		byte[] filled = new byte[bufferPosition+1];
 		System.arraycopy(buffer, 0, filled, 0, bufferPosition);
 		return filled;
-	}
-	public void writeString(String string) {
-		writeObject(string);
 	}
 }
