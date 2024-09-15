@@ -43,13 +43,13 @@ public class SecondExample {
 	static {
 		QuickSerializer.registerSerializer(AppleSerializer.class); // Registering our class-serializer
 	}
-
 	/**
-		<h1>Apple</h1>
+	 <h1>Apple</h1>
 
-	    Our class to serialization
-		Just an example with one String and an Integer
+	 Our class to serialization
+	 Just an example with one String and an Integer
 	 */
+
 	public record Apple(String color, int amount) {
 		@Override
 		public String toString() {
