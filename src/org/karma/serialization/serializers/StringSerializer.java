@@ -1,7 +1,7 @@
 package org.karma.serialization.serializers;
 
-import org.karma.serialization.SerDataInputStream;
-import org.karma.serialization.SerDataOutputStream;
+import org.karma.serialization.SerializationInput;
+import org.karma.serialization.SerializationOutput;
 import org.karma.serialization.Serializer;
 import org.karma.serialization.SerializerObject;
 
@@ -9,22 +9,23 @@ import org.karma.serialization.SerializerObject;
 public class StringSerializer implements Serializer<String> {
 
 	@Override
-	public void serialize(SerDataOutputStream data, String string) {
-		var stringLength = string.length();
+	public void serialize(SerializationOutput data, String string) {
+		var stringBytes = string.getBytes();
+		var stringLength = stringBytes.length;
 		data.writeInt(stringLength); // String length
 		for (int i = 0; i < stringLength; i++) {
-			data.writeInt(string.charAt(i)); // Some char
+			data.writeByte(stringBytes[i]); // Some char
 		}
 	}
 
 	@Override
-	public String deserialize(SerDataInputStream data) {
+	public String deserialize(SerializationInput data) {
 		var stringLength = data.readInt(); // String length
-		var stringChars = new char[stringLength];
+		var stringBytes = new byte[stringLength];
 		for (int i = 0; i < stringLength; i++) {
-			stringChars[i] = data.readChar(); // Some char
+			stringBytes[i] = data.readByte(); // Some char
 		}
-		return new String(stringChars); // Return result
+		return new String(stringBytes); // Return result
 	}
 
 }

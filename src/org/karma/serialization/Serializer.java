@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public interface Serializer<T>
 {
-	void serialize(SerDataOutputStream data, T object);
+	void serialize(SerializationOutput data, T object);
 
-	T deserialize(SerDataInputStream data) throws InvocationTargetException, InstantiationException, IllegalAccessException;
+	T deserialize(SerializationInput data) throws InvocationTargetException, InstantiationException, IllegalAccessException;
 }

@@ -10,13 +10,13 @@ public class SecondExample {
 	    Object serializers with QuickSerializer
 	 */
 	public static void main(String[] args) {
-		var dataToSerialize = new SerDataOutputStream(1024);
+		var dataToSerialize = QuickSerializer.outputOf(1024);
 
 		dataToSerialize.writeObject(new Apple("Red", 0));
 		dataToSerialize.writeObject(new Apple("Yellow", 2));
 		dataToSerialize.writeObject(new Apple("Green", -3));
 
-		var serializedData = new SerDataInputStream(dataToSerialize.getBytes());
+		var serializedData = QuickSerializer.inputOf(dataToSerialize.getBytes());
 
 		while (serializedData.hasAvailable()) {
 			System.out.println(serializedData.readObject(Apple.class));
@@ -84,13 +84,13 @@ public class SecondExample {
 	public static class AppleSerializer implements Serializer<Apple> {
 
 		@Override
-		public void serialize(SerDataOutputStream data, Apple object) {
+		public void serialize(SerializationOutput data, Apple object) {
 			data.writeString(object.color);
 			data.writeInt(object.amount);
 		}
 
 		@Override
-		public Apple deserialize(SerDataInputStream data) {
+		public Apple deserialize(SerializationInput data) {
 			var color = data.readString();
 			var amount = data.readInt();
 			return new Apple(color, amount);

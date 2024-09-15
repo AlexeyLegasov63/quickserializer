@@ -49,10 +49,10 @@ public class QuickSerializer
 		var objectConstructor = objectClass.getDeclaredConstructor();
 		var objectSerializer = new Serializer<T>() {
 			@Override
-			public void serialize(SerDataOutputStream data, T object) {
+			public void serialize(SerializationOutput data, T object) {
 			}
 			@Override
-			public T deserialize(SerDataInputStream data) {
+			public T deserialize(SerializationInput data) {
 				try {
 					return objectConstructor.newInstance();
 				} catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
@@ -96,12 +96,36 @@ public class QuickSerializer
 		registerSerializer(serializerInstance);
 	}
 
+	public static SerializationInput inputOf(byte[] data) {
+		return new SerializationInput(data);
+	}
+
+	public static ConcurrentSerializationInput concurrentInputOf(byte[] data) {
+		return new ConcurrentSerializationInput(data);
+	}
+
+	public static SerializationOutput outputOf(int bufferCapacity) {
+		assertCapacity(bufferCapacity);
+		return new SerializationOutput(bufferCapacity);
+	}
+
+	public static ConcurrentSerializationOutput concurrentOutputOf(int bufferCapacity) {
+		assertCapacity(bufferCapacity);
+		return new ConcurrentSerializationOutput(bufferCapacity);
+	}
+
+	private static void assertCapacity(int capacity) {
+		if (Integer.MAX_VALUE - capacity >= 0) {
+			return;
+		}
+		throw new OutOfMemoryError();
+	}
 
 	static {
 		// Register java.lang.String serializer
 		registerSerializer(StringSerializer.class);
 	}
 
-	static record RuntimeSerializer<T>(Class<T> objectClass, Serializer<T> serializerInstance, short signature, int bytes) {
+	record RuntimeSerializer<T>(Class<T> objectClass, Serializer<T> serializerInstance, short signature, int bytes) {
 	}
 }

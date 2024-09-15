@@ -18,7 +18,7 @@ public class ThirdExample {
 	 */
 
 	public static void main(String[] args) {
-		var dataToSerialize = new SerDataOutputStream(1024);
+		var dataToSerialize = QuickSerializer.outputOf(1024);
 
 		// Our apples
 		var apples = List.of(
@@ -34,7 +34,7 @@ public class ThirdExample {
 		dataToSerialize.writeObject(ourBox);
 		dataToSerialize.writeObject(emptyBox);
 
-		var serializedData = new SerDataInputStream(dataToSerialize.getBytes());
+		var serializedData = QuickSerializer.inputOf(dataToSerialize.getBytes());
 
 		System.out.println(serializedData.readObject(Box.class));
 
@@ -83,7 +83,7 @@ public class ThirdExample {
 	public static class BoxSerializer implements Serializer<Box> {
 
 		@Override
-		public void serialize(SerDataOutputStream data, Box object) {
+		public void serialize(SerializationOutput data, Box object) {
 			var boxApples = object.apples;
 			var boxSize = boxApples.size();
 
@@ -94,7 +94,7 @@ public class ThirdExample {
 		}
 
 		@Override
-		public Box deserialize(SerDataInputStream data) {
+		public Box deserialize(SerializationInput data) {
 			var boxApples = new ArrayList<Apple>(); // New list
 
 			// J means the size of the list
@@ -147,13 +147,13 @@ public class ThirdExample {
 	public static class AppleSerializer implements Serializer<Apple> {
 
 		@Override
-		public void serialize(SerDataOutputStream data, Apple object) {
+		public void serialize(SerializationOutput data, Apple object) {
 			data.writeString(object.color);
 			data.writeInt(object.amount);
 		}
 
 		@Override
-		public Apple deserialize(SerDataInputStream data) {
+		public Apple deserialize(SerializationInput data) {
 			var color = data.readString();
 			var amount = data.readInt();
 			return new Apple(color, amount);

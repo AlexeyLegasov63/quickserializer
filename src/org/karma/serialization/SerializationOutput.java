@@ -6,7 +6,7 @@ import static java.lang.String.format;
 import static org.karma.serialization.QuickSerializer.getSerializer;
 
 @SuppressWarnings(value = "unchecked")
-public class SerDataOutputStream {
+public class SerializationOutput {
 	private final byte[] buffer;
 	private final int bufferMaxSize;
 	private int bufferPosition = 0;
@@ -14,7 +14,7 @@ public class SerDataOutputStream {
 	/**
 		 @param bufferSize - max size of buffer. (in bytes)
 	 */
-	public SerDataOutputStream(int bufferSize) {
+	SerializationOutput(int bufferSize) {
 		this.bufferMaxSize = bufferSize;
 		this.buffer = new byte[bufferSize];
 	}
@@ -113,7 +113,7 @@ public class SerDataOutputStream {
 
 		writeShort(serializer.signature()); // Signature of the type
 
-		var subBuffer = new SerDataOutputStream(serializer.bytes()); // Create sub-buffer with SerializerObject.bytes() size
+		var subBuffer = new SerializationOutput(serializer.bytes()); // Create sub-buffer with SerializerObject.bytes() size
 
 		try {
 			serializer.serializerInstance().serialize(subBuffer, object); // We don't use current buffer due to safety. So we create a new one

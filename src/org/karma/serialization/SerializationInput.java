@@ -4,12 +4,12 @@ import org.karma.serialization.QuickSerializer.RuntimeSerializer;
 import static org.karma.serialization.QuickSerializer.*;
 import static java.lang.String.format;
 
-public class SerDataInputStream {
+public class SerializationInput {
 	private final byte[] buffer;
 	private final int bufferSize;
 	private int bufferPosition = 0;
 
-	public SerDataInputStream(byte[] bytes) {
+	SerializationInput(byte[] bytes) {
 		this.bufferSize = bytes.length;
 		this.buffer = bytes;
 	}
@@ -213,7 +213,7 @@ public class SerDataInputStream {
 		for (int i = 0; i < objectSize; i++) {
 			objectData[i] = readByte();
 		}
-		var subBuffer = new SerDataInputStream(objectData); // Create a sub-buffer with object data
+		var subBuffer = new SerializationInput(objectData); // Create a sub-buffer with object data
 		try {
 			return serializer.serializerInstance().deserialize(subBuffer);
 		} catch (Throwable t) {

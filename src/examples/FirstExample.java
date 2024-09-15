@@ -10,7 +10,7 @@ public class FirstExample {
 	    Basic QuickSerializer using
 	 */
 	public static void main(String[] args) {
-		var dataToSerialize = new SerDataOutputStream(1024); // Creating a buffer with 1024 bytes
+		var dataToSerialize = QuickSerializer.outputOf(1024); // Creating a buffer with 1024 bytes
 		/*
 			Requires 60 bytes.
 
@@ -28,7 +28,7 @@ public class FirstExample {
 		dataToSerialize.writeBoolean(true);
 		dataToSerialize.writeDouble(Math.PI); // 8 bytes
 
-		var serializedData = new SerDataInputStream(dataToSerialize.getBytes()); // 69 bytes
+		var serializedData = QuickSerializer.inputOf(dataToSerialize.getBytes()); // 69 bytes
 
 		System.out.println(serializedData.readString());
 		System.out.println(serializedData.readBoolean());
