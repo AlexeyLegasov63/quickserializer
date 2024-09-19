@@ -10,8 +10,8 @@ public class StringSerializer implements Serializer<String> {
 
 	@Override
 	public void serialize(SerializationOutput data, String string) {
-		var stringBytes = string.getBytes();
-		var stringLength = stringBytes.length;
+		byte[] stringBytes = string.getBytes();
+		int stringLength = stringBytes.length;
 		data.writeInt(stringLength); // String length
 		for (int i = 0; i < stringLength; i++) {
 			data.writeByte(stringBytes[i]); // Some char
@@ -20,8 +20,8 @@ public class StringSerializer implements Serializer<String> {
 
 	@Override
 	public String deserialize(SerializationInput data) {
-		var stringLength = data.readInt(); // String length
-		var stringBytes = new byte[stringLength];
+		int stringLength = data.readInt(); // String length
+		byte[] stringBytes = new byte[stringLength];
 		for (int i = 0; i < stringLength; i++) {
 			stringBytes[i] = data.readByte(); // Some char
 		}

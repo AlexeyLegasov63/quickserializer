@@ -22,7 +22,7 @@ public class SerializationOutput {
 	    Throws SerializerEndOfBufferException if there's not enough bytes
 	 */
 	private void checkBufferAvail(int bytesNeeded) {
-		var askedBytes = bufferPosition + bytesNeeded;
+		int askedBytes = bufferPosition + bytesNeeded;
 		if (askedBytes < bufferMaxSize) {
 			return;
 		}
@@ -99,7 +99,7 @@ public class SerializationOutput {
 	    Write a null instance of Class<T>
 	 */
 	public <T> void writeNull(Class<T> objectClass) {
-		var serializer = (RuntimeSerializer<T>) getSerializer(objectClass); // Get object serializer
+		RuntimeSerializer<T> serializer = (RuntimeSerializer<T>) getSerializer(objectClass); // Get object serializer
 
 		writeShort(serializer.signature()); // Signature of the type
 		writeInt(-1); // Negative size means Null
@@ -108,12 +108,12 @@ public class SerializationOutput {
 	    Requires at least 6 bytes
 	 */
 	public <T> void writeObject(T object) {
-		var serializer = (RuntimeSerializer<T>) getSerializer(object.getClass());
+		RuntimeSerializer<T> serializer = (RuntimeSerializer<T>) getSerializer(object.getClass());
 		assert serializer != null;
 
 		writeShort(serializer.signature()); // Signature of the type
 
-		var subBuffer = new SerializationOutput(serializer.bytes()); // Create sub-buffer with SerializerObject.bytes() size
+		SerializationOutput subBuffer = new SerializationOutput(serializer.bytes()); // Create sub-buffer with SerializerObject.bytes() size
 
 		try {
 			serializer.serializerInstance().serialize(subBuffer, object); // We don't use current buffer due to safety. So we create a new one
@@ -122,8 +122,8 @@ public class SerializationOutput {
 			throw new SerializerObjectWriteException(format("Failed to write object. Written null instead of %s", serializer.objectClass().getSimpleName()), t);
 		}
 
-		var result = subBuffer.getBytes(); // Get the used space of subBuffer
-		var resultLength = result.length;
+		byte[] result = subBuffer.getBytes(); // Get the used space of subBuffer
+		int resultLength = result.length;
 
 		writeInt(resultLength); // Size of object
 

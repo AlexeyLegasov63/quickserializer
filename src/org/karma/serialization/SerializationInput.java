@@ -18,7 +18,7 @@ public class SerializationInput {
 		Throws SerializerEndOfBufferException if there's not enough bytes
 	 */
 	private void checkBufferAvail(int bytesNeeded) {
-		var askedBytes = bufferPosition + bytesNeeded;
+		int askedBytes = bufferPosition + bytesNeeded;
 		if (askedBytes < bufferSize) {
 			return;
 		}
@@ -30,7 +30,7 @@ public class SerializationInput {
 	 */
 	private long readNumber(int bytes) {
 		checkBufferAvail(bytes); // Ensure that there's enough bytes
-		var number = (long) (buffer[bufferPosition++] & 0xff) << (bytes - 1) * 8;
+		long number = (long) (buffer[bufferPosition++] & 0xff) << (bytes - 1) * 8;
 		for (int i = 1; i < bytes; i++) {
 			number |= (long) (buffer[bufferPosition++] & 0xff) << (bytes - 1 - i) * 8;
 		}
@@ -64,7 +64,7 @@ public class SerializationInput {
 	 */
 	public void skipObject() {
 		skipShort();
-		var objectSize = readInt();
+		int objectSize = readInt();
 		if (objectSize < 0) // A negative size means a null instance, and this doesn't have data. So we just return
 			return;
 		skipBytes(objectSize);
@@ -198,22 +198,22 @@ public class SerializationInput {
 	    Load an object by Signature
 	 */
 	public <T> T readObject() {
-		var objectSignature = readShort(); // Read the object class signature
+		short objectSignature = readShort(); // Read the object class signature
 		return readObject0(getSerializer(objectSignature), format("0x%s", Integer.toHexString(objectSignature)));
 	}
 	private <T> T readObject0(RuntimeSerializer<T> serializer, String source) {
 		if (serializer == null) {
 			throw new SerializerObjectUnknownException(format("Unknown serializer: %s", source));
 		}
-		var objectSize = readInt(); // Size of object data
+		int objectSize = readInt(); // Size of object data
 		if (objectSize < 0) {
 			return null; // A negative size means a null instance
 		}
-		var objectData = new byte[objectSize];
+		byte[] objectData = new byte[objectSize];
 		for (int i = 0; i < objectSize; i++) {
 			objectData[i] = readByte();
 		}
-		var subBuffer = new SerializationInput(objectData); // Create a sub-buffer with object data
+		SerializationInput subBuffer = new SerializationInput(objectData); // Create a sub-buffer with object data
 		try {
 			return serializer.serializerInstance().deserialize(subBuffer);
 		} catch (Throwable t) {

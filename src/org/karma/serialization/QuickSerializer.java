@@ -2,8 +2,10 @@ package org.karma.serialization;
 
 import org.karma.serialization.serializers.StringSerializer;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 
 @SuppressWarnings(value = "unchecked")
@@ -34,8 +36,7 @@ public class QuickSerializer
 		return (RuntimeSerializer<T>) SERIALIZERS.values()
 				.stream()
 				.filter(f -> f.signature == signature)
-				.findFirst()
-				.orElseThrow();
+				.findFirst().orElseThrow(() -> new SerializerObjectUnknownException("There's no such serializer with this signature: " + signature));
 	}
 
 	/**
@@ -46,8 +47,8 @@ public class QuickSerializer
 	 * @param <T> Required type
 	 */
 	public static <T> void resisterEmpty(short signature, Class<T> objectClass) throws NoSuchMethodException {
-		var objectConstructor = objectClass.getDeclaredConstructor();
-		var objectSerializer = new Serializer<T>() {
+		Constructor<T> objectConstructor = objectClass.getDeclaredConstructor();
+		Serializer<T> objectSerializer = new Serializer<T>() {
 			@Override
 			public void serialize(SerializationOutput data, T object) {
 			}
@@ -64,18 +65,18 @@ public class QuickSerializer
 	}
 
 	private static <T> void registerSerializer(short signature, int bytes, Serializer<T> serializer) {
-		var serializerInterfaces = serializer.getClass().getGenericInterfaces();
+		Type[] serializerInterfaces = serializer.getClass().getGenericInterfaces();
 		assert serializerInterfaces.length != 0;
-		var serializerParamType = (ParameterizedType) serializerInterfaces[0];
-		var objectClass = (Class<T>) serializerParamType.getActualTypeArguments()[0];
+		ParameterizedType serializerParamType = (ParameterizedType) serializerInterfaces[0];
+		Class<T> objectClass = (Class<T>) serializerParamType.getActualTypeArguments()[0];
 		SERIALIZERS.put(objectClass, new RuntimeSerializer<T>(objectClass, serializer, signature, bytes));
 	}
 
 	private static <T> void registerSerializer(Serializer<T> serializer) {
-		var serializerClass = serializer.getClass();
+		Class<?> serializerClass = serializer.getClass();
 		assert serializerClass.isAnnotationPresent(SerializerObject.class);
 
-		var annotationData = serializer.getClass().getDeclaredAnnotation(SerializerObject.class);
+		SerializerObject annotationData = serializer.getClass().getDeclaredAnnotation(SerializerObject.class);
 
 		registerSerializer(annotationData.signature(), annotationData.bytes(), serializer);
 	}
@@ -126,6 +127,35 @@ public class QuickSerializer
 		registerSerializer(StringSerializer.class);
 	}
 
-	record RuntimeSerializer<T>(Class<T> objectClass, Serializer<T> serializerInstance, short signature, int bytes) {
+	static class RuntimeSerializer<T>{
+
+		private final Class<T> objectClass;
+		private final Serializer<T> serializerInstance;
+		private final short signature;
+		private final int bytes;
+
+
+		private RuntimeSerializer(Class<T> objectClass, Serializer<T> serializerInstance, short signature, int bytes) {
+			this.objectClass = objectClass;
+			this.serializerInstance = serializerInstance;
+			this.signature = signature;
+			this.bytes = bytes;
+		}
+
+		public Class<T> objectClass() {
+			return objectClass;
+		}
+
+		public Serializer<T> serializerInstance() {
+			return serializerInstance;
+		}
+
+		public short signature() {
+			return signature;
+		}
+
+		public int bytes() {
+			return bytes;
+		}
 	}
 }
